@@ -4,10 +4,10 @@ WORKDIR /
 
 COPY . /
 
-ENV SEPA_HOST "mml.arces.unibo.it"
+ENV SEPA_HOST "host.docker.internal"
 ENV CMD "./CRITERIA1D"
 
-CMD java -jar sepa.apps.swap.criteria-0.0.1-SNAPSHOT.jar
+CMD java -jar sepa.apps.swamp.criteria-0.0.1-SNAPSHOT.jar
 
 
 
