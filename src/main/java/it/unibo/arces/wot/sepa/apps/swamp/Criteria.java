@@ -12,9 +12,10 @@ import it.unibo.arces.wot.sepa.commons.sparql.RDFTermURI;
 import it.unibo.arces.wot.sepa.pattern.GenericClient;
 import it.unibo.arces.wot.sepa.pattern.JSAP;
 
-import java.io.Closeable;
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -33,48 +34,69 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-public class Criteria implements Closeable {
+public class Criteria  {
 	private static final Logger logger = LogManager.getLogger();
 
 	final GenericClient sepaClient;
-	final Connection weatherDB;
-	final Connection outputDB;
+//	final Connection weatherDB;
+//	final Connection outputDB;
 	final JSAP jsap;
 	final String cmd;
 	
+	final String weatherPath = "./swamp/weather.db";
+	final String irrigationPath = "./swamp/irrigation.db";
+	
 	final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
-	public Criteria(String weatherDbPath, String irrigationDbPath, String cmd) throws SEPAProtocolException,
+	public Criteria(String cmd,String host) throws SEPAProtocolException,
 			SEPAPropertiesException, SEPASecurityException, SQLException, FileNotFoundException, IOException {
 		jsap = new JSAP("base.jsap");
 		jsap.read("criteria.jsap", true);
-
+		
+		if (host != null) jsap.setHost(host);
 		sepaClient = new GenericClient(jsap);
-		weatherDB = DriverManager.getConnection("jdbc:sqlite:" + weatherDbPath);
-		outputDB = DriverManager.getConnection("jdbc:sqlite:" + irrigationDbPath);
 		this.cmd = cmd;
+		
+		logger.info("SEPA_HOST: "+host);
+		logger.info("CMD: "+cmd);
 	}
 
 	public void run(Calendar day, int days) throws SEPAProtocolException, SEPASecurityException,
 			SEPAPropertiesException, SEPABindingsException, SQLException, IOException, InterruptedException {
 		
-		logger.info("Running: "+ dateFormatter.format(day.getTime())+ " forecast interval (days): "+days);
+		logger.info("Running Criteria SWAMP service: "+ dateFormatter.format(day.getTime())+ " forecast interval (days): "+days);
 		
 		// Set input DBs
+		logger.info("Set input...");
 		setInput(day, days);
 	
 		// Run the model
+		logger.info("Run Criteria...");
 		run();
 		
 		// Get output from output DB (e.g., irrigation and LAI)
+		logger.info("Get output...");
 		getOutput(day, days);
 	}
 
 	private void run() throws IOException, InterruptedException {
-		Process process = Runtime.getRuntime().exec(cmd);
-		while (process.isAlive()) {
-			Thread.sleep(1000);
+		logger.info("*** Execute Criteria *** ("+cmd+")");
+
+		ProcessBuilder   ps=new ProcessBuilder(cmd);
+		ps.redirectErrorStream(true);
+
+		Process pr = ps.start();  
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+		String line;
+		while ((line = in.readLine()) != null) {
+			logger.debug(line);
 		}
+		pr.waitFor();
+
+		in.close();
+		
+		logger.info("*** Execute Criteria END ***");
 	}
 	
 	private void setInput(Calendar day,int days) throws SEPAProtocolException, SEPASecurityException, SEPAPropertiesException, SEPABindingsException, SQLException {
@@ -99,6 +121,8 @@ public class Criteria implements Closeable {
 		stop.add(Calendar.DAY_OF_MONTH, days);
 		
 		String time = dateFormatter.format(day.getTime()) + "T00:00:00Z";
+		
+		Connection outputDB = DriverManager.getConnection("jdbc:sqlite:" + irrigationPath);
 		
 		for (Entry<String, JsonElement> placeEntry : irrigations.entrySet()) {
 			String table = placeEntry.getValue().getAsString();
@@ -144,6 +168,8 @@ public class Criteria implements Closeable {
 				forecast.add(Calendar.DAY_OF_MONTH, 1);
 			}
 		}
+		
+		outputDB.close();
 
 	}
 
@@ -289,6 +315,7 @@ public class Criteria implements Closeable {
 
 	private void updateWeatherDB(String table, String date, String tmin, String tmax, String tavg, String prec,
 			String etp, String waterTable) throws SQLException {
+		Connection weatherDB = DriverManager.getConnection("jdbc:sqlite:" + weatherPath);
 		Statement statement = weatherDB.createStatement();
 		statement.setQueryTimeout(30); // set timeout to 30 sec.
 
@@ -296,20 +323,6 @@ public class Criteria implements Closeable {
 				+ waterTable + "'";
 		statement.executeUpdate("delete from " + table + " where date ='" + date + "'");
 		statement.executeUpdate("insert into " + table + " values(+" + values + ")");
+		weatherDB.close();
 	}
-
-	@Override
-	public void close() throws IOException {
-		try {
-			weatherDB.close();
-		} catch (SQLException e) {
-			logger.error(e.getMessage());
-		}
-		try {
-			outputDB.close();
-		} catch (SQLException e) {
-			logger.error(e.getMessage());
-		}
-	}
-
 }

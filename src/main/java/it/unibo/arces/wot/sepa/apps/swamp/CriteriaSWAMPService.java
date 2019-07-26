@@ -1,9 +1,12 @@
 package it.unibo.arces.wot.sepa.apps.swamp;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.TimeZone;
 
 import it.unibo.arces.wot.sepa.commons.exceptions.SEPABindingsException;
@@ -38,29 +41,36 @@ import it.unibo.arces.wot.sepa.commons.exceptions.SEPASecurityException;
  * 
  */
 public class CriteriaSWAMPService {
-	static String path = "/Users/luca/Documents/workspace/CRITERIA3D-master/build-swamp-Desktop_Qt_5_8_0_clang_64bit-Debug";
-	static String weatherPath = path + "/swamp/weather.db";
-	static String irrigationPath = path + "/swamp/irrigation.db";
-	static String commandLine = "open " + path + "/swampService";
-	static int forcastDays = 3;
-
+	static String host = null;
+	static String commandLine = "./CRITERIA1D";
+	static int forecastDays = 3;
+	
 	public static void main(String[] args) throws SEPAProtocolException, SEPASecurityException, SQLException,
-			SEPAPropertiesException, IOException, SEPABindingsException, InterruptedException {
-		Criteria criteria = new Criteria(weatherPath, irrigationPath, commandLine);
-
-		Calendar today = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-		today.set(2019, 6, 23);
-		criteria.run(today, forcastDays);
-		criteria.close();
+			SEPAPropertiesException, IOException, SEPABindingsException, InterruptedException, URISyntaxException {
 		
-//		Calendar end = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-//		end.set(2019, 6, 23); // 2019-07-23
-//		
-//		while (today.before(end)) {
-//			criteria.run(today, forcastDays);
-//			today.add(Calendar.DAY_OF_MONTH, 1);
-//		}
-
-//		criteria.close();
+		Date now = new Date();
+		Calendar today = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+		today.setTime(now);
+		
+		Map<String, String> env = System.getenv();
+		
+		for(String var : env.keySet()) {
+			switch (var.toUpperCase()) {
+			case "SEPA_HOST":
+				host = env.get("SEPA_HOST");
+				break;
+			case "CMD":
+				commandLine = env.get("CMD");
+				break;
+			case "FORECAST_DAYS":
+				forecastDays = Integer.parseInt(env.get("FORECAST_DAYS"));
+				break;
+			default:
+				break;
+			}
+		}
+		
+		Criteria criteria = new Criteria(commandLine,host);
+		criteria.run(today, forecastDays);
 	}
 }
