@@ -38,17 +38,17 @@ public class Criteria  {
 	private static final Logger logger = LogManager.getLogger();
 
 	final GenericClient sepaClient;
-//	final Connection weatherDB;
-//	final Connection outputDB;
 	final JSAP jsap;
 	final String cmd;
 	
-	final String weatherPath = "./swamp/weather.db";
-	final String irrigationPath = "./swamp/irrigation.db";
+	final String weatherPath;
+	final String irrigationPath;
+	
+	final int days;
 	
 	final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
-	public Criteria(String cmd,String host) throws SEPAProtocolException,
+	public Criteria(String cmd,String host,String weatherDB,String irrigationDB,int days) throws SEPAProtocolException,
 			SEPAPropertiesException, SEPASecurityException, SQLException, FileNotFoundException, IOException {
 		jsap = new JSAP("base.jsap");
 		jsap.read("criteria.jsap", true);
@@ -59,9 +59,16 @@ public class Criteria  {
 		
 		logger.info("SEPA_HOST: "+host);
 		logger.info("CMD: "+cmd);
+		logger.info("WEATHER DB: "+weatherDB);
+		logger.info("IRRIGATION DB: "+irrigationDB);
+		
+		weatherPath = getClass().getClassLoader().getResource(weatherDB).getPath();
+		irrigationPath = getClass().getClassLoader().getResource(irrigationDB).getPath();
+		
+		this.days = days;
 	}
 
-	public void run(Calendar day, int days) throws SEPAProtocolException, SEPASecurityException,
+	public void run(Calendar day) throws SEPAProtocolException, SEPASecurityException,
 			SEPAPropertiesException, SEPABindingsException, SQLException, IOException, InterruptedException {
 		
 		logger.info("Running Criteria SWAMP service: "+ dateFormatter.format(day.getTime())+ " forecast interval (days): "+days);
@@ -287,7 +294,7 @@ public class Criteria  {
 					tmax = res.getBindingsResults().getBindings().get(0).getValue("max");
 					tmin = res.getBindingsResults().getBindings().get(0).getValue("min");
 					tavg = res.getBindingsResults().getBindings().get(0).getValue("avg");
-					tavg = String.format("%.2f", Float.parseFloat(tavg));
+					//tavg = String.format("%.2f", Float.parseFloat(tavg));
 
 					logger.info("Temperature forecast " + place + " day: " + dayString + " forecast: " + forecastString +" place: " + place + " <" + tmin
 							+ " " + tavg + " " + tmax + ">");
@@ -303,7 +310,7 @@ public class Criteria  {
 					logger.error("no results for query precipitation forecast " + place + " day: " + dayString + " forecast: " + forecastString +" place: " + place);
 				else {
 					prec = res.getBindingsResults().getBindings().get(0).getValue("sum");
-					prec = String.format("%.2f", Float.parseFloat(prec));
+					//prec = String.format("%.2f", Float.parseFloat(prec));
 
 					logger.info("Precipitation forecast " + place + " day: " + dayString + " forecast: " + forecastString +" place: " + place + " <" + prec + ">");
 				}
