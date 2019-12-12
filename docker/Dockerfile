@@ -14,10 +14,10 @@ COPY . /
 #ENV SET_DATE 2019-08-03			
 
 # Uncomment to set a custom weather DB (input)
-#ENV WEATHER_DB "myWeatherDB.db"
+#ENV INPUT_DB "myWeatherDB.db"
 
 # Uncomment to set a custom irrigation DB (output)
-#ENV IRRIGATION_DB "myIrrigationDB.db"
+#ENV OUTPUT_DB "myIrrigationDB.db"
 
 # Uncomment to set the number of days used for forecasts (default is 3)
 #ENV FORECAST_DAYS 3

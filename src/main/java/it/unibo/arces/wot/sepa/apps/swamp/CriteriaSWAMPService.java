@@ -21,40 +21,51 @@ import it.unibo.arces.wot.sepa.commons.exceptions.SEPASecurityException;
  * 
  * 1) The "swamp.ini" file contains the references to the DB files
  * 
- * [project] 
- * name="SWAMP" 
- * DBparameters="./swamp/crop.db"
- * DBsoil="./swamp/soil.db" 
- * DBmeteo="./swamp/weather.db"
- * DBunits="./swamp/units.db" 
- * DBoutput="./swamp/irrigation.db"
+[software]
+software=CRITERIA1D
+
+[project]
+name=SWAMP
+db_parameters=./data/modelParameters.db
+db_soil=./data/soil_ER_2002.db
+db_meteo=./data/weather_observed.db
+
+db_units=./data/units.db
+
+db_output=./output/swamp.db
+
+[forecast]
+isSeasonalForecast=false
+isShortTermForecast=false
  * 
- * [forecast] 
- * isSeasonalForecast=false 
- * isShortTermForecast=false
+ * 2) The 'db_units' includes all the cases to be evaluated. 
  * 
- * 2) The "units.db" includes all the cases to be evaluated. Each project "unit"
- * record is composed by:
+ * Each project "unit" record is composed by:
  * 
  * - ID_CASE : an ID of the use case 
- * - ID_CROP : the ID of the crop to be evaluated (the ID is a foreign key for the "crop.db") 
- * - ID_SOIL : the ID of the soil to be evaluated (the ID is a foreign key for the "crop.db") 
- * - ID_METERO : the ID of the weather table (T_MAX, T_MIN, T_AVG, PREC, ETP, WATER_TABLE) within the "weather.db"
+ * - ID_CROP : the ID of the crop to be evaluated (the ID is a foreign key for the 'db_parameters') 
+ * - ID_SOIL : the ID of the soil to be evaluated (the ID is a foreign key for the 'db_soil') 
+ * - ID_METEO : the ID of the weather table (T_MAX, T_MIN, T_AVG, PREC, ETP, WATER_TABLE) within the 'db_meteo'
  * 
  */
 public class CriteriaSWAMPService {
 	static String host = "host.docker.internal,";
 	static String commandLine = "./CRITERIA1D";
 	static int forecastDays = 3;
-	static String weatherDB = "weather.db";
-	static String irrigationDB = "irrigation.db";
+	static String inputDB = "./data/weather_observed.db";
+	static String outputDB = "./output/swamp.db";
 	
 	public static void main(String[] args) throws SEPAProtocolException, SEPASecurityException, SQLException,
 			SEPAPropertiesException, IOException, SEPABindingsException, InterruptedException, URISyntaxException, ParseException {
 		
 		Date now = new Date();
-		Calendar today = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-		today.setTime(now);
+//		Calendar today = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+//		today.setTime(now);
+		
+		Calendar from = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+		Calendar to = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+		from.setTime(now);
+		to.setTime(now);
 		
 		Map<String, String> env = System.getenv();
 		
@@ -66,25 +77,41 @@ public class CriteriaSWAMPService {
 			case "CMD":
 				commandLine = env.get("CMD");
 				break;
-			case "WEATHER_DB":
-				weatherDB = env.get("WEATHER_DB");
+			case "INPUT_DB":
+				inputDB = env.get("INPUT_DB");
 				break;
-			case "IRRIGATION_DB":
-				irrigationDB = env.get("IRRIGATION_DB");
+			case "OUTPUT_DB":
+				outputDB = env.get("OUTPUT_DB");
 				break;
 			case "FORECAST_DAYS":
 				forecastDays = Integer.parseInt(env.get("FORECAST_DAYS"));
 				break;
 			case "SET_DATE":
 				Date set=new SimpleDateFormat("yyyy-MM-dd").parse(env.get("SET_DATE"));
-				today.setTime(set);
+//				today.setTime(set);
+				from.setTime(set);
+				to.setTime(set);
+				break;
+			case "FROM":
+				set=new SimpleDateFormat("yyyy-MM-dd").parse(env.get("FROM"));
+				from.setTime(set);
+				break;
+			case "TO":
+				set=new SimpleDateFormat("yyyy-MM-dd").parse(env.get("TO"));
+				to.setTime(set);
 				break;
 			default:
 				break;
 			}
 		}
 		
-		Criteria criteria = new Criteria(commandLine,host,weatherDB,irrigationDB,forecastDays);
-		criteria.run(today);
+		Criteria criteria = new Criteria(commandLine,host,inputDB,outputDB,forecastDays);
+		
+		Calendar sim = from;
+		while(sim.before(to) || sim.equals(to)) {
+			criteria.run(sim);
+			sim.add(Calendar.DAY_OF_MONTH, 1);
+		}
+		
 	}
 }
