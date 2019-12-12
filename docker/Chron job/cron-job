@@ -1,0 +1,2 @@
+0 7 * * * /startApp.sh
+ # empty line do not remove
