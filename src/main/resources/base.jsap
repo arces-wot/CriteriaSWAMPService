@@ -1,5 +1,5 @@
 {
-	"host": "localhost",
+	"host": "mml.arces.unibo.it",
 	"oauth": {
 		"enable": false,
 		"register": "https://localhost:8443/oauth/register",
@@ -7,7 +7,7 @@
 	},
 	"sparql11protocol": {
 		"protocol": "http",
-		"port": 8000,
+		"port": 8666,
 		"query": {
 			"path": "/query",
 			"method": "POST",
@@ -23,7 +23,7 @@
 		"protocol": "ws",
 		"availableProtocols": {
 			"ws": {
-				"port": 9000,
+				"port": 9666,
 				"path": "/subscribe"
 			},
 			"wss": {
@@ -53,22 +53,28 @@
 		
 	},
 	"queries": {
-		"WATER_TABLE": {
-			"sparql": "SELECT ?wt WHERE {GRAPH <http://wot.arces.unibo.it/observation/history> {?result sosa:isResultOf ?observation ; qudt:numericValue ?wt; time:inXSDDateTimeStamp ?timestamp} FILTER (xsd:dateTime(?timestamp) > ?from && xsd:dateTime(?timestamp) < ?to)}",
+		"FORECAST_N_DAYS": {
+			"sparql": "SELECT * WHERE {OPTIONAL {?unit qudt:symbol ?symbol} graph <http://wot.arces.unibo.it/forecast> {?obs sosa:hasFeatureOfInterest ?place ; rdf:type swamp:Forecast ; sosa:resultTime ?resultTime ; sosa:phenomenonTime ?timestamp ; sosa:observedProperty ?property ; sosa:hasResult ?res . ?res qudt:numericValue ?value ; qudt:unit ?unit BIND((xsd:dateTime(substr(xsd:string(?timestamp),1,10)) - xsd:dateTime(substr(xsd:string(?resultTime),1,10)))/86400 AS ?diff) FILTER (xsd:dateTime(?resultTime) >= xsd:dateTime(concat(?from,'T00:00:00Z')) && xsd:dateTime(?resultTime) <= xsd:dateTime(concat(?to,'T23:59:59Z')) && (?diff = xsd:integer(?n)) )}} ORDER BY ?timestamp",
 			"forcedBindings": {
 				"from": {
-					"datatype": "xsd:dateTime",
 					"type": "literal",
-					"value": "2019-06-02T00:00:00Z"
+					"value": "2019-07-30"
 				},
 				"to": {
-					"datatype": "xsd:dateTime",
 					"type": "literal",
-					"value": "2019-06-02T23:59:59Z"
+					"value": "2019-08-03"
 				},
-				"observation": {
+				"n": {
+					"type": "literal",
+					"value": "0"
+				},
+				"place": {
 					"type": "uri",
-					"value": "swamp:Current_Weather_Bertacchini_WaterTable"
+					"value": "swamp:Bertacchini"
+				},
+				"property": {
+					"type": "uri",
+					"value": "swamp:LeafAreaIndex"
 				}
 			}
 		},

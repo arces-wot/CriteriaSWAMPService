@@ -1,0 +1,15 @@
+Model parameters: /Users/luca/Documents/SEPAProject/CriteriaSWAMPService/sepa.apps.swap.criteria/src/main/resources/./data/crop.db
+Soil DB: /Users/luca/Documents/SEPAProject/CriteriaSWAMPService/sepa.apps.swap.criteria/src/main/resources/./data/soil.db
+Meteo DB: /Users/luca/Documents/SEPAProject/CriteriaSWAMPService/sepa.apps.swap.criteria/src/main/resources/./data/weather.db
+Output DB: /Users/luca/Documents/SEPAProject/CriteriaSWAMPService/sepa.apps.swap.criteria/src/main/resources/./data/swamp.db
+Units DB: /Users/luca/Documents/SEPAProject/CriteriaSWAMPService/sepa.apps.swap.criteria/src/main/resources/./data/units.db
+
+Query result: 5 distinct units.
+
+Unit SWAMP_PERA_ABATE_SPRINKLER PEARABATE_SPRINKLER SMB1 01015
+Unit SWAMP_VITE_LAMBRUSCO_ROTOLONE GRAPEVINELAMBRUSCO_ROTOLONE SMB1 01015
+Unit SWAMP_PERA_ABATE PEARABATE SMB1 01015
+Unit SWAMP_PERA_ABATE_WT PEARABATE SMB1 01015_WT
+Unit SWAMP_VITE_LAMBRUSCO GRAPEVINELAMBRUSCO SMB1 01015
+
+END

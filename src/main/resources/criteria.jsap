@@ -4,22 +4,14 @@
 				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
 				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
 				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
-				"forecastUri": "swamp:Bertacchini",
+				"stationUri": "swamp:Bertacchini",
 				"table" : "GRD_01015",
 				"useWaterTable" : false
-			},
-			{
-				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
-				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
-				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
-				"forecastUri": "swamp:Bertacchini",
-				"table" : "GRD_01015_WT",
-				"useWaterTable" : true
 			}],
 		"places" : {
-			"swamp:Bertacchini" : "SWAMP_VITE_LAMBRUSCO",
-			"swamp:Ferrari" : "SWAMP_PERA_ABATE",
-			"swamp:Bonacini" : "SWAMP_PERA_ABATE_WT"
+			"swamp:Bertacchini" : "SWAMP_VITE_LAMBRUSCO_ROTOLONE",
+			"swamp:Ferrari" : "SWAMP_PERA_ABATE_SPRINKLER",
+			"swamp:Bonacini" :  "SWAMP_PERA_ABATE"
 		}
 	}
 }
