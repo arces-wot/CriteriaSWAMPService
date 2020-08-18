@@ -1,0 +1,73 @@
+{
+	"extended": {
+		"weather":  [
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table" : "GRD_01015_WT06_OFF",
+				"useWaterTable" : false
+			}],
+		"weather_all":  [
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table" : "GRD_01015_WT01_OFF30",
+				"useWaterTable" : true
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table" : "GRD_01015_WT01",
+				"useWaterTable" : true
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table" : "GRD_01015_WT06",
+				"useWaterTable" : false
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table" : "GRD_01015_WT01_NOWT",
+				"useWaterTable" : false
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table" : "GRD_01015_WT06_OFF",
+				"useWaterTable" : false
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri" : "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table" : "GRD_01015_WT01_OFF15",
+				"useWaterTable" : false
+			}],
+		"places_all" : {
+			"swamp:BertacchiniCriteriaON" : "SWAMP_BERT_ON",
+			"swamp:BertacchiniCriteriaOFF" : "SWAMP_BERT_OFF",
+			"swamp:FerrariCriteriaON" : "SWAMP_FERRARI_ON",
+			"swamp:FerrariCriteriaOFF" : "SWAMP_FERRARI_OFF",
+			"swamp:BonaciniCriteriaON" : "SWAMP_BON_ON",
+			"swamp:BonaciniCriteriaOFF" :  "SWAMP_BON_OFF"
+		},
+		"places" : {
+			"swamp:FerrariCriteriaOFF" : "SWAMP_FERRARI_OFF"
+		}
+	}
+}

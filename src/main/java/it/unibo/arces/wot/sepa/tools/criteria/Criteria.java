@@ -13,6 +13,7 @@ import it.unibo.arces.wot.sepa.pattern.GenericClient;
 import it.unibo.arces.wot.sepa.pattern.JSAP;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,6 +31,8 @@ import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.ini4j.InvalidFileFormatException;
+import org.ini4j.Wini;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -83,44 +86,102 @@ public class Criteria {
 	final JSAP jsap;
 	final String cmd;
 
-	final String inputDBFile;
-	final String outputDBFile;
+	final String meteoDBPath;
+	final String outputDBPath;
+	final String forecastDBPath;
+	
+	Connection meteoDB;
+	Connection outputDB;
+	Connection forecastDB;
 
 	final int days;
 
 	final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
-	public Criteria(String cmd, String host, String weatherDB, String outputDB, int days)
+	public Criteria(String cmd, String host, String weatherDB, String outputDB, String soilDB, String cropDB,String unitsDB,int days,String forecastDB,String extendedJsap)
 			throws SEPAProtocolException, SEPAPropertiesException, SEPASecurityException, SQLException,
 			FileNotFoundException, IOException, URISyntaxException {
 		jsap = new JSAP("base.jsap");
-		jsap.read("criteria.jsap", true);
+		jsap.read(extendedJsap, true);
 
 		if (host != null)
 			jsap.setHost(host);
-		sepaClient = new GenericClient(jsap,null,null);
-		this.cmd = cmd;
+		sepaClient = new GenericClient(jsap, null, null);
 
 		logger.info("SEPA_HOST: " + host);
 		logger.info("CMD: " + cmd);
-		logger.info("WEATHER DB: " + weatherDB);
+		
+		logger.info("METEO DB: " + weatherDB);
 		logger.info("OUTPUT DB: " + outputDB);
+		logger.info("SOIL DB: " + soilDB);
+		logger.info("CROP DB: " + cropDB);
+		logger.info("UNITS DB: " + unitsDB);
+		
+		logger.info("FORECAST DAYS: " + days);
+		logger.info("FORECAST DB: " + forecastDB);
 
-//		String path = ".";
-////		new File(Criteria.class.getProtectionDomain().getCodeSource().getLocation()
-////			    .toURI()).getParent();		
-//		this.inputDBFile = path+"/"+weatherDB;
-//		this.outputDBFile = path+"/"+outputDB;
-
-		this.inputDBFile = weatherDB;
-		this.outputDBFile = outputDB;
-
+		this.cmd = cmd;
 		this.days = days;
+		this.meteoDBPath = weatherDB;
+		this.outputDBPath = outputDB;
+		this.forecastDBPath = forecastDB;
+		
+		createIniFile( weatherDB,  outputDB,  soilDB,  cropDB, unitsDB, days, forecastDB);
+	}
+
+	/*
+[software]
+software="CRITERIA1D"
+
+[project]
+path=""
+name="criteria-sepa-docker"
+db_meteo="/data/weather.db"
+db_soil="/data/soil.db"
+db_crop="/data/crop.db"
+db_units="/data/units.db"
+db_output="/data/output.db"
+db_forecast="/data/forecast.db"
+
+[forecast]
+isSeasonalForecast=false
+isShortTermForecast=false
+daysOfForecast=3
+	 * */
+	private void createIniFile(String weatherDB, String outputDB, String soilDB, String cropDB,String unitsDB,int days,String forecastDB) throws InvalidFileFormatException, IOException {
+		Wini ini = new Wini(new File("criteria.ini"));
+      
+		ini.put("software", "software", "CRITERIA1D");
+        
+		ini.put("project", "path", "");
+		ini.put("project", "name", "criteria-sepa-docker");
+		ini.put("project", "db_meteo", weatherDB);
+		ini.put("project", "db_soil", soilDB);
+		ini.put("project", "db_crop", cropDB);
+		ini.put("project", "db_units", unitsDB);
+		ini.put("project", "db_output", outputDB);
+		if (forecastDB != null) ini.put("project", "db_forecast", forecastDB);
+		
+		ini.put("forecast", "isSeasonalForecast", false);
+		if (days > 0) {
+			ini.put("forecast", "isShortTermForecast", true);
+			ini.put("forecast", "daysOfForecast", days);
+		}
+		else {
+			ini.put("forecast", "isShortTermForecast", false);
+			ini.put("forecast", "daysOfForecast", 0);
+		}
+		
+        ini.store();
 	}
 
 	public void run(Calendar day) throws SEPAProtocolException, SEPASecurityException, SEPAPropertiesException,
 			SEPABindingsException, SQLException, IOException, InterruptedException {
 
+		meteoDB = DriverManager.getConnection("jdbc:sqlite:" + meteoDBPath);
+		outputDB = DriverManager.getConnection("jdbc:sqlite:" + outputDBPath);
+		if (forecastDBPath != null) forecastDB = DriverManager.getConnection("jdbc:sqlite:" + forecastDBPath); 
+		
 		logger.info("Running Criteria SWAMP service: " + dateFormatter.format(day.getTime())
 				+ " forecast interval (days): " + days);
 
@@ -135,13 +196,18 @@ public class Criteria {
 		// Get output from output DB (e.g., irrigation and LAI)
 		logger.info("Get output...");
 		getOutput(day, days, false);
+
+		meteoDB.close();
+		outputDB.close();
+		if (forecastDBPath != null) forecastDB.close();
 	}
 
 	public void copyOutput(Calendar day, int days) throws SQLException {
 		getOutput(day, days, true);
 	}
 
-	public void setWeatherDB(Calendar day) throws SEPAProtocolException, SEPASecurityException, SEPAPropertiesException, SEPABindingsException, SQLException {
+	public void setWeatherDB(Calendar day) throws SEPAProtocolException, SEPASecurityException, SEPAPropertiesException,
+			SEPABindingsException, SQLException {
 		// Set input DBs
 		logger.info("Set input...");
 		setInput(day, days);
@@ -180,6 +246,10 @@ public class Criteria {
 	private void getOutput(Calendar day, int days, boolean copy) throws SQLException {
 		getOutputDB(day, days, "IRRIGATION", "swamp:IrrigationNeeds", "unit:Millimeter", copy);
 		getOutputDB(day, days, "LAI", "swamp:LeafAreaIndex", "unit:Number", copy);
+
+		getOutputDB(day, days, "WC_PROFILE", "swamp:WaterContentProfile", "unit:Millimeter", copy);
+		getOutputDB(day, days, "DEFICIT_PROFILE", "swamp:DeficitProfile", "unit:Millimeter", copy);
+		getOutputDB(day, days, "THRESHOLD", "swamp:Threshold", "unit:Millimeter", copy);
 	}
 
 	private String getWaterTableFromDB(Calendar day, String table) throws SQLException {
@@ -188,23 +258,22 @@ public class Criteria {
 		yesterday.setTime(day.getTime());
 		yesterday.add(Calendar.DAY_OF_MONTH, -1);
 
-		// String weatherPath =
-		// getClass().getClassLoader().getResource(inputDBFile).getPath();
-		Connection outputDB = DriverManager.getConnection("jdbc:sqlite:" + inputDBFile);
-
 		String date = dateFormatter.format(yesterday.getTime());
 		String queryString = "select watertable from " + table + " where DATE='" + date + "'";
 
 		// Get record from CRITERIA DB
-		Statement statement = outputDB.createStatement();
+		Statement statement = meteoDB.createStatement();
 		ResultSet rs = statement.executeQuery(queryString);
 
+		String ret = null;
 		if (rs.next()) {
 			float value = rs.getFloat("watertable");
-			return String.format("%.3f", value);
+			ret = String.format("%.3f", value);
 		}
 
-		return null;
+		statement.close();
+
+		return ret;
 	}
 
 	private void getOutputDB(Calendar day, int days, String dbField, String propertyUri, String unitUri, boolean copy)
@@ -217,10 +286,6 @@ public class Criteria {
 
 		String time = dateFormatter.format(day.getTime()) + "T00:00:00Z";
 
-		// String outputPath =
-		// getClass().getClassLoader().getResource(outputDB).getPath();
-		Connection outputDB = DriverManager.getConnection("jdbc:sqlite:" + outputDBFile);
-
 		for (Entry<String, JsonElement> placeEntry : irrigations.entrySet()) {
 			String table = placeEntry.getValue().getAsString();
 			String place = placeEntry.getKey();
@@ -231,7 +296,16 @@ public class Criteria {
 			while (forecast.before(stop)) {
 				String date = dateFormatter.format(forecast.getTime());
 				String pTime = date + "T00:00:00Z";
+
+				// QUERY OUTPUTs
 				String queryString = "select " + dbField + " from " + table + " where DATE='" + date + "'";
+				if (dbField.equals("WC_PROFILE")) {
+					queryString = "select WATER_CONTENT, ROOTDEPTH from " + table + " where DATE='" + date + "'";
+				} else if (dbField.equals("DEFICIT_PROFILE")) {
+					queryString = "select DEFICIT, ROOTDEPTH from " + table + " where DATE='" + date + "'";
+				} else if (dbField.equals("THRESHOLD")) {
+					queryString = "select WATER_CONTENT, ROOTDEPTH, RAW from " + table + " where DATE='" + date + "'";
+				}
 
 				logger.debug(queryString);
 
@@ -240,7 +314,17 @@ public class Criteria {
 				ResultSet rs = statement.executeQuery(queryString);
 
 				while (rs.next()) {
-					float value = rs.getFloat(dbField);
+					float value;
+					
+					// COMPUTE OUTPUTs
+					if (dbField.equals("WC_PROFILE")) {
+						value = rs.getFloat("WATER_CONTENT") * rs.getFloat("ROOTDEPTH");
+					} else if (dbField.equals("DEFICIT_PROFILE")) {
+						value = rs.getFloat("DEFICIT") * rs.getFloat("ROOTDEPTH");
+					} else if (dbField.equals("THRESHOLD")) {
+						value = rs.getFloat("WATER_CONTENT") * rs.getFloat("ROOTDEPTH") - rs.getFloat("RAW");
+					} else value = rs.getFloat(dbField);
+
 					logger.debug(
 							"Results table: " + table + " date: " + date + " field: " + dbField + " value: " + value);
 
@@ -270,9 +354,6 @@ public class Criteria {
 				forecast.add(Calendar.DAY_OF_MONTH, 1);
 			}
 		}
-
-		outputDB.close();
-
 	}
 
 	private void updateObservedWeather(Calendar day) throws SEPAProtocolException, SEPASecurityException,
@@ -368,7 +449,7 @@ public class Criteria {
 				}
 			}
 
-			updateInputDB(dbTableName, dateFormatter.format(day.getTime()), tmin, tmax, tavg, prec, wt);
+			updateInputDB(meteoDB,dbTableName, dateFormatter.format(day.getTime()), tmin, tmax, tavg, prec, wt);
 		}
 	}
 
@@ -460,25 +541,29 @@ public class Criteria {
 			if (useWt)
 				wt = getWaterTableFromDB(day, dbTableName);
 
-			updateInputDB(dbTableName, dateFormatter.format(forecastDay.getTime()), tmin, tmax, tavg, prec, wt);
+			updateInputDB(forecastDB,dbTableName, dateFormatter.format(forecastDay.getTime()), tmin, tmax, tavg, prec, wt);
 		}
 	}
 
-	private void updateInputDB(String table, String date, String tmin, String tmax, String tavg, String prec,
+	private void updateInputDB(Connection db,String table, String date, String tmin, String tmax, String tavg, String prec,
 			String waterTable) throws SQLException {
 
-		// String weatherPath =
-		// getClass().getClassLoader().getResource(inputDB).getPath();
-		logger.info("Set input DB: " + inputDBFile + " Table: " + table + " Date: " + date + " Tmin: " + tmin
+		logger.info("Set input DB: " + meteoDBPath + " Table: " + table + " Date: " + date + " Tmin: " + tmin
 				+ " Tmax: " + tmax + " Tavg: " + tavg + " Prec: " + prec);
 
-		Connection weatherDB = DriverManager.getConnection("jdbc:sqlite:" + inputDBFile);
-		Statement statement = weatherDB.createStatement();
+		Statement statement = db.createStatement();
 		statement.setQueryTimeout(2);
 
 		// DELETE
-		logger.info("DELETE FROM " + table + " WHERE DATE ='" + date + "'");
-		statement.executeUpdate("delete from " + table + " where date ='" + date + "'");
+//		String queryString = "select * from " + table + " where date='" + date + "'";
+//		ResultSet rs = statement.executeQuery(queryString);
+//		while (rs.next()) {
+//			logger.info(rs.getRow()+" "+rs.getString("date")+" "+rs.getFloat("tmin")+" "+rs.getFloat("tmax")+ " "+rs.getFloat("tavg"));
+////			if (rs.getDate("date").equals(date)) {
+//				logger.info("DELETE FROM " + table + " WHERE DATE ='" + date + "'");
+//				statement.executeUpdate("delete from " + table + " where date ='" + date + "'");
+////			}
+//		}
 
 		// INSERT
 		String values = null;
@@ -488,13 +573,16 @@ public class Criteria {
 			values = "'" + date + "','" + tmin + "','" + tmax + "','" + tavg + "','" + prec + "'";
 
 		if (waterTable != null) {
-			logger.info("INSERT INTO " + table + " (date,tmin,tmax,tavg,prec,watertable) VALUES (+" + values + ")");
+			logger.info("INSERT INTO " + table + " (date,tmin,tmax,tavg,prec,watertable) VALUES (" + values + ")");
 			statement.executeUpdate(
-					"insert into " + table + " (date,tmin,tmax,tavg,prec,watertable) values (+" + values + ")");
+					"insert into " + table + " (date,tmin,tmax,tavg,prec,watertable) values (" + values + ")");
+
 		} else {
-			logger.info("INSERT INTO " + table + " (date,tmin,tmax,tavg,prec) VALUES v(+" + values + ")");
-			statement.executeUpdate("insert into " + table + " (date,tmin,tmax,tavg,prec) values(+" + values + ")");
+			logger.info("INSERT INTO " + table + " (date,tmin,tmax,tavg,prec) VALUES (" + values + ")");
+			statement.executeUpdate("insert into " + table + " (date,tmin,tmax,tavg,prec) values(" + values + ")");
+
 		}
-		weatherDB.close();
+
+		statement.close();
 	}
 }

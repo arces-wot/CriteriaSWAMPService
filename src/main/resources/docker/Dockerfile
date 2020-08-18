@@ -106,18 +106,17 @@ RUN set -eux; \
 	java --version
 
 
-#CRITERIA as cron job
+#CRITERIA INSTALL
 WORKDIR /
 
 COPY base.jsap base.jsap
-COPY criteria.jsap criteria.jsap
-COPY criteria.jar criteria.jar
+COPY sepa.apps.swamp.criteria-0.0.1-SNAPSHOT.jar criteria.jar
+COPY criteria.ini criteria.ini
 
 COPY CRITERIA1D CRITERIA1D
-COPY swamp.ini swamp.ini
+RUN chmod 777 CRITERIA1D
 
 COPY startApp.sh startApp.sh
-
 RUN chmod 777 startApp.sh
 
 # Copy hello-cron file to the cron.d directory
@@ -131,8 +130,12 @@ RUN crontab /etc/cron.d/cron-job
 
 RUN date
 
-# run application with this command line
-#CMD ["/CRITERIA1D"]
+# CRITERIA
+CMD ["./CRITERIA1D","criteria.ini"]
+
+# CRITERIA Linked Data (powered by SEPA)
 #CMD ["java", "-jar", "/criteria.jar"]
-CMD cron -f
+
+# CRITERIA Linked Data (powered by SEPA) + CRON JOB
+#CMD cron -f
 
