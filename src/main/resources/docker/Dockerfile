@@ -111,31 +111,10 @@ WORKDIR /
 
 COPY base.jsap base.jsap
 COPY sepa.apps.swamp.criteria-0.0.1-SNAPSHOT.jar criteria.jar
-COPY criteria.ini criteria.ini
 
 COPY CRITERIA1D CRITERIA1D
 RUN chmod 777 CRITERIA1D
 
-COPY startApp.sh startApp.sh
-RUN chmod 777 startApp.sh
-
-# Copy hello-cron file to the cron.d directory
-COPY cron-job /etc/cron.d/cron-job
-
-# Give execution rights on the cron job
-RUN chmod 0644 /etc/cron.d/cron-job
-
-# Apply cron job
-RUN crontab /etc/cron.d/cron-job
-
-RUN date
-
-# CRITERIA
-CMD ["./CRITERIA1D","criteria.ini"]
-
 # CRITERIA Linked Data (powered by SEPA)
-#CMD ["java", "-jar", "/criteria.jar"]
-
-# CRITERIA Linked Data (powered by SEPA) + CRON JOB
-#CMD cron -f
+CMD ["java", "-jar", "/criteria.jar"]
 
