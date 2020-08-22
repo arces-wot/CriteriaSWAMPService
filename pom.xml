@@ -39,22 +39,6 @@
 							</resources>
 						</configuration>
 					</execution>
-					<!-- <execution> -->
-					<!-- <id>copy-db</id> -->
-					<!-- here the phase you need -->
-					<!-- <phase>install</phase> -->
-					<!-- <goals> -->
-					<!-- <goal>copy-resources</goal> -->
-					<!-- </goals> -->
-					<!-- <configuration> -->
-					<!-- <outputDirectory>${basedir}/target/data</outputDirectory> -->
-					<!-- <resources> -->
-					<!-- <resource> -->
-					<!-- <directory>${basedir}/src/main/resources/data</directory> -->
-					<!-- </resource> -->
-					<!-- </resources> -->
-					<!-- </configuration> -->
-					<!-- </execution> -->
 				</executions>
 			</plugin>
 			<plugin>
@@ -73,7 +57,7 @@
 								<!-- add Main-Class to manifest file -->
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>it.unibo.arces.wot.sepa.apps.swamp.CriteriaSWAMPService</mainClass>
+									<mainClass>it.unibo.arces.wot.sepa.tools.criteria.CriteriaSWAMPService</mainClass>
 								</transformer>
 							</transformers>
 							<filters>
@@ -90,47 +74,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- <plugin> -->
-			<!-- <artifactId>maven-resources-plugin</artifactId> -->
-			<!-- <version>3.1.0</version> -->
-			<!-- <executions> -->
-			<!-- <execution> -->
-			<!-- <id>copy-resources</id> -->
-			<!-- here the phase you need -->
-			<!-- <phase>install</phase> -->
-			<!-- <goals> -->
-			<!-- <goal>copy-resources</goal> -->
-			<!-- </goals> -->
-			<!-- <configuration> -->
-			<!-- <outputDirectory>${basedir}/target/</outputDirectory> -->
-			<!-- <outputDirectory>${basedir}/docker/</outputDirectory> -->
-			<!-- <resources> -->
-			<!-- <resource> -->
-			<!-- <directory>${basedir}/src/main/resources</directory> -->
-			<!-- <filtering>true</filtering> -->
-			<!-- </resource> -->
-			<!-- </resources> -->
-			<!-- </configuration> -->
-			<!-- </execution> -->
-			<!-- </executions> -->
-			<!-- </plugin> -->
-			<!-- <plugin> -->
-			<!-- <artifactId>maven-antrun-plugin</artifactId> -->
-			<!-- <configuration> -->
-			<!-- <tasks> -->
-			<!-- <copy file="target/sepa.apps.swamp.criteria-0.0.1-SNAPSHOT.jar" -->
-			<!-- tofile="docker/sepa.apps.swamp.criteria-0.0.1-SNAPSHOT.jar" /> -->
-			<!-- </tasks> -->
-			<!-- </configuration> -->
-			<!-- <executions> -->
-			<!-- <execution> -->
-			<!-- <phase>install</phase> -->
-			<!-- <goals> -->
-			<!-- <goal>run</goal> -->
-			<!-- </goals> -->
-			<!-- </execution> -->
-			<!-- </executions> -->
-			<!-- </plugin> -->
 		</plugins>
 	</build>
 	<dependencies>

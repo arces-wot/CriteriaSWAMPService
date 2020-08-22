@@ -109,12 +109,12 @@ RUN set -eux; \
 #CRITERIA INSTALL
 WORKDIR /
 
-COPY base.jsap base.jsap
+COPY criteria.jsap criteria.jsap
 COPY sepa.apps.swamp.criteria-0.0.1-SNAPSHOT.jar criteria.jar
-
 COPY CRITERIA1D CRITERIA1D
+
 RUN chmod 777 CRITERIA1D
 
 # CRITERIA Linked Data (powered by SEPA)
-CMD ["java", "-jar", "/criteria.jar"]
+CMD ["java", "-Dlog4j.configurationFile=/data/log4j2.xml","-jar", "/criteria.jar"]
 

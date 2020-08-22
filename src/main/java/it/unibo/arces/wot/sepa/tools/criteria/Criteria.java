@@ -28,6 +28,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.Map.Entry;
+import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -98,11 +99,10 @@ public class Criteria {
 
 	final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
-	public Criteria(String cmd, String host, String weatherDB, String outputDB, String soilDB, String cropDB,String unitsDB,int days,String forecastDB,String extendedJsap)
+	public Criteria(String cmd, String host, String weatherDB, String outputDB, String soilDB, String cropDB,String unitsDB,int days,String forecastDB)
 			throws SEPAProtocolException, SEPAPropertiesException, SEPASecurityException, SQLException,
 			FileNotFoundException, IOException, URISyntaxException {
-		jsap = new JSAP("base.jsap");
-		jsap.read(extendedJsap, true);
+		jsap = new JSAP("criteria.jsap");
 
 		if (host != null)
 			jsap.setHost(host);
@@ -149,7 +149,11 @@ isShortTermForecast=false
 daysOfForecast=3
 	 * */
 	private void createIniFile(String weatherDB, String outputDB, String soilDB, String cropDB,String unitsDB,int days,String forecastDB) throws InvalidFileFormatException, IOException {
-		Wini ini = new Wini(new File("criteria.ini"));
+		File file = new File("criteria.ini");
+		if (file.exists()) file.delete();
+		file.createNewFile();
+		
+		Wini ini = new Wini(file);
       
 		ini.put("software", "software", "CRITERIA1D");
         
@@ -173,14 +177,20 @@ daysOfForecast=3
 		}
 		
         ini.store();
+        
+        logger.info("*** criteria.ini ***");
+        File test = new File("criteria.ini");
+        Scanner myReader = new Scanner(test);
+        while (myReader.hasNextLine()) {
+          String data = myReader.nextLine();
+          logger.info(data);
+        }
+        myReader.close();
+        logger.info("********************");
 	}
 
 	public void run(Calendar day) throws SEPAProtocolException, SEPASecurityException, SEPAPropertiesException,
 			SEPABindingsException, SQLException, IOException, InterruptedException {
-
-		meteoDB = DriverManager.getConnection("jdbc:sqlite:" + meteoDBPath);
-		outputDB = DriverManager.getConnection("jdbc:sqlite:" + outputDBPath);
-		if (forecastDBPath != null) forecastDB = DriverManager.getConnection("jdbc:sqlite:" + forecastDBPath); 
 		
 		logger.info("Running Criteria SWAMP service: " + dateFormatter.format(day.getTime())
 				+ " forecast interval (days): " + days);
@@ -188,18 +198,13 @@ daysOfForecast=3
 		// Set input DBs
 		logger.info("Set input...");
 		setInput(day, days);
-
+		
 		// Run the model
 		logger.info("Run Criteria...");
 		run();
 
 		// Get output from output DB (e.g., irrigation and LAI)
-		logger.info("Get output...");
-		getOutput(day, days, false);
-
-		meteoDB.close();
-		outputDB.close();
-		if (forecastDBPath != null) forecastDB.close();
+		getOutput(day, days, false);	
 	}
 
 	public void copyOutput(Calendar day, int days) throws SQLException {
@@ -214,9 +219,9 @@ daysOfForecast=3
 	}
 
 	private void run() throws IOException, InterruptedException {
-		logger.info("*** Execute Criteria *** (" + cmd + ")");
+		logger.info("*** Execute Criteria *** (" + cmd + " criteria.ini)");
 
-		ProcessBuilder ps = new ProcessBuilder(cmd);
+		ProcessBuilder ps = new ProcessBuilder(cmd,"criteria.ini");
 		ps.redirectErrorStream(true);
 
 		Process pr = ps.start();
@@ -239,17 +244,51 @@ daysOfForecast=3
 		yesterday.setTime(day.getTime());
 		yesterday.add(Calendar.DAY_OF_MONTH, -1);
 
+		meteoDB = DriverManager.getConnection("jdbc:sqlite:" + meteoDBPath);		
+		if (forecastDBPath != null) forecastDB = DriverManager.getConnection("jdbc:sqlite:" + forecastDBPath); 
+		
 		updateObservedWeather(yesterday);
 		updateWeatherForecasts(day, days);
+		
+		meteoDB.close();		
+		if (forecastDBPath != null) forecastDB.close();
 	}
 
 	private void getOutput(Calendar day, int days, boolean copy) throws SQLException {
-		getOutputDB(day, days, "IRRIGATION", "swamp:IrrigationNeeds", "unit:Millimeter", copy);
-		getOutputDB(day, days, "LAI", "swamp:LeafAreaIndex", "unit:Number", copy);
-
-		getOutputDB(day, days, "WC_PROFILE", "swamp:WaterContentProfile", "unit:Millimeter", copy);
-		getOutputDB(day, days, "DEFICIT_PROFILE", "swamp:DeficitProfile", "unit:Millimeter", copy);
-		getOutputDB(day, days, "THRESHOLD", "swamp:Threshold", "unit:Millimeter", copy);
+		logger.info("Get output...");
+		outputDB = DriverManager.getConnection("jdbc:sqlite:" + outputDBPath);
+		
+		JsonObject outputs = jsap.getExtendedData().getAsJsonObject("outputs");
+		
+		for(Entry<String, JsonElement> output : outputs.entrySet()) {
+			getOutputDB(day, days, output.getKey(), output.getValue().getAsJsonObject().get("property").getAsString(), output.getValue().getAsJsonObject().get("unit").getAsString(), copy);
+		}
+		
+		outputDB.close();	
+	}
+	
+	private String buildQueryString(String dbField,String table,String date) {
+		String queryString = "select " + dbField + " from " + table + " where DATE='" + date + "'";
+		if (dbField.equals("WC_PROFILE")) {
+			queryString = "select WATER_CONTENT, ROOTDEPTH from " + table + " where DATE='" + date + "'";
+		} else if (dbField.equals("DEFICIT_PROFILE")) {
+			queryString = "select DEFICIT, ROOTDEPTH from " + table + " where DATE='" + date + "'";
+		} else if (dbField.equals("THRESHOLD")) {
+			queryString = "select WATER_CONTENT, ROOTDEPTH, RAW from " + table + " where DATE='" + date + "'";
+		}
+		return queryString;
+	}
+	
+	private float computeOutput(String dbField,ResultSet rs) throws SQLException {
+		float value;
+		if (dbField.equals("WC_PROFILE")) {
+			value = rs.getFloat("WATER_CONTENT") * rs.getFloat("ROOTDEPTH");
+		} else if (dbField.equals("DEFICIT_PROFILE")) {
+			value = rs.getFloat("DEFICIT") * rs.getFloat("ROOTDEPTH");
+		} else if (dbField.equals("THRESHOLD")) {
+			value = rs.getFloat("WATER_CONTENT") * rs.getFloat("ROOTDEPTH") - rs.getFloat("READILY_AW");
+		} else value = rs.getFloat(dbField);
+		return value;
 	}
 
 	private String getWaterTableFromDB(Calendar day, String table) throws SQLException {
@@ -280,9 +319,11 @@ daysOfForecast=3
 			throws SQLException {
 		JsonObject irrigations = jsap.getExtendedData().getAsJsonObject("places");
 
+		logger.debug("getOutputDB Day:"+new SimpleDateFormat().format(day.getTime())+" Days:"+days+" DBField:"+dbField+" PropertyURI:"+propertyUri+" UnitURI:"+unitUri+" Copy:"+copy);
+		
 		Calendar stop = new GregorianCalendar();
 		stop.setTime(day.getTime());
-		stop.add(Calendar.DAY_OF_MONTH, days);
+		stop.add(Calendar.DAY_OF_MONTH, days+1);
 
 		String time = dateFormatter.format(day.getTime()) + "T00:00:00Z";
 
@@ -290,6 +331,8 @@ daysOfForecast=3
 			String table = placeEntry.getValue().getAsString();
 			String place = placeEntry.getKey();
 
+			logger.debug("Table: "+table+" Place: "+place);
+			
 			Calendar forecast = new GregorianCalendar();
 			forecast.setTime(day.getTime());
 
@@ -298,14 +341,7 @@ daysOfForecast=3
 				String pTime = date + "T00:00:00Z";
 
 				// QUERY OUTPUTs
-				String queryString = "select " + dbField + " from " + table + " where DATE='" + date + "'";
-				if (dbField.equals("WC_PROFILE")) {
-					queryString = "select WATER_CONTENT, ROOTDEPTH from " + table + " where DATE='" + date + "'";
-				} else if (dbField.equals("DEFICIT_PROFILE")) {
-					queryString = "select DEFICIT, ROOTDEPTH from " + table + " where DATE='" + date + "'";
-				} else if (dbField.equals("THRESHOLD")) {
-					queryString = "select WATER_CONTENT, ROOTDEPTH, RAW from " + table + " where DATE='" + date + "'";
-				}
+				String queryString = buildQueryString(dbField,table,date);
 
 				logger.debug(queryString);
 
@@ -314,16 +350,8 @@ daysOfForecast=3
 				ResultSet rs = statement.executeQuery(queryString);
 
 				while (rs.next()) {
-					float value;
-					
-					// COMPUTE OUTPUTs
-					if (dbField.equals("WC_PROFILE")) {
-						value = rs.getFloat("WATER_CONTENT") * rs.getFloat("ROOTDEPTH");
-					} else if (dbField.equals("DEFICIT_PROFILE")) {
-						value = rs.getFloat("DEFICIT") * rs.getFloat("ROOTDEPTH");
-					} else if (dbField.equals("THRESHOLD")) {
-						value = rs.getFloat("WATER_CONTENT") * rs.getFloat("ROOTDEPTH") - rs.getFloat("RAW");
-					} else value = rs.getFloat(dbField);
+					// COMPUTE OUTPUT
+					float value = computeOutput(dbField, rs);
 
 					logger.debug(
 							"Results table: " + table + " date: " + date + " field: " + dbField + " value: " + value);
@@ -555,15 +583,15 @@ daysOfForecast=3
 		statement.setQueryTimeout(2);
 
 		// DELETE
-//		String queryString = "select * from " + table + " where date='" + date + "'";
-//		ResultSet rs = statement.executeQuery(queryString);
-//		while (rs.next()) {
-//			logger.info(rs.getRow()+" "+rs.getString("date")+" "+rs.getFloat("tmin")+" "+rs.getFloat("tmax")+ " "+rs.getFloat("tavg"));
-////			if (rs.getDate("date").equals(date)) {
-//				logger.info("DELETE FROM " + table + " WHERE DATE ='" + date + "'");
-//				statement.executeUpdate("delete from " + table + " where date ='" + date + "'");
-////			}
-//		}
+		String queryString = "select * from " + table + " where date='" + date + "'";
+		ResultSet rs = statement.executeQuery(queryString);
+		while (rs.next()) {
+			logger.info(rs.getRow()+" "+rs.getString("date")+" "+rs.getFloat("tmin")+" "+rs.getFloat("tmax")+ " "+rs.getFloat("tavg"));
+//			if (rs.getDate("date").equals(date)) {
+				logger.info("DELETE FROM " + table + " WHERE DATE ='" + date + "'");
+				statement.executeUpdate("delete from " + table + " where date ='" + date + "'");
+//			}
+		}
 
 		// INSERT
 		String values = null;

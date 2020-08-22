@@ -45,7 +45,7 @@ import it.unibo.arces.wot.sepa.commons.exceptions.SEPASecurityException;
  * 
  */
 public class CriteriaSWAMPService {
-	static String host = "host.docker.internal";
+	static String host = null;
 	static String commandLine = "./CRITERIA1D";
 	static int daysOfForecast = 3;
 
@@ -55,8 +55,6 @@ public class CriteriaSWAMPService {
 	static String db_units = "/data/units.db";
 	static String db_output = "/data/output.db";
 	static String db_forecast = "/data/forecast.db";
-
-	static String extendedJsap = "/data/criteria.jsap";
 
 	static enum MODE {
 		COPY, SET, RUN, CRON
@@ -105,7 +103,7 @@ public class CriteriaSWAMPService {
 			case "DB_FORECAST":
 				db_forecast = env.get("DB_FORECAST");
 				break;
-			case "FORECAST_DAYS":
+			case "DAYS_OF_FORECAST":
 				daysOfForecast = Integer.parseInt(env.get("DAYS_OF_FORECAST"));
 				break;
 
@@ -149,7 +147,7 @@ public class CriteriaSWAMPService {
 		}
 
 		Criteria criteria = new Criteria(commandLine, host, db_meteo, db_output, db_soil, db_crop, db_units,
-				daysOfForecast, db_forecast, extendedJsap);
+				daysOfForecast, db_forecast);
 
 		if (mode.equals(MODE.CRON)) {
 			Calendar gmt = new GregorianCalendar(TimeZone.getTimeZone("GMT"));

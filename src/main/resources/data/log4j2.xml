@@ -21,14 +21,10 @@
 			<PatternLayout
 				pattern="%d{ISO8601} [%-5level] %t (%F:%L) %msg%n%throwable" />
 		</Console>
-		<File name="Log" fileName="log.csv">
-			<PatternLayout pattern="%d{ISO8601}|[%-5level]|%t|(%F:%L)|%msg|%n\n" />
-		</File>
 	</Appenders>
 	<Loggers>
-		<Root level="info">
-			<AppenderRef ref="Console" level="info" />
-			<AppenderRef ref="Log" level="error" />
+		<Root level="debug">
+			<AppenderRef ref="Console" level="trace" />
 		</Root>
 	</Loggers>
 </Configuration>

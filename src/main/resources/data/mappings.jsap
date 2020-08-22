@@ -1,0 +1,140 @@
+{
+	"extended": {
+		"weather": [
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri": "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table": "GRD_01015_WT01",
+				"useWaterTable": true
+			}
+		],
+		"places": {
+			"swamp:BertacchiniCriteriaON": "SWAMP_BERT_ON"
+		},
+		"outputs": {
+			"IRRIGATION": {
+				"property" : "swamp:IrrigationNeeds",
+				"unit" : "unit:Millimeter"	
+			},
+			"LAI": {
+				"property" : "swamp:LeafAreaIndex",
+				"unit" : "unit:Number"	
+			},
+			"WC_PROFILE": {
+				"property" : "swamp:WaterContentProfile",
+				"unit" : "unit:Millimeter"	
+			},
+			"DEFICIT_PROFILE": {
+				"property" : "swamp:DeficitProfile",
+				"unit" : "unit:Millimeter"	
+			},
+			"THRESHOLD": {
+				"property" : "swamp:Threshold",
+				"unit" : "unit:Millimeter"	
+			}
+		}
+	},
+	"extended_all": {
+		"weather": [
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri": "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table": "GRD_01015_WT01_OFF30",
+				"useWaterTable": true
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri": "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table": "GRD_01015_WT01",
+				"useWaterTable": true
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri": "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table": "GRD_01015_WT06",
+				"useWaterTable": false
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri": "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table": "GRD_01015_WT06_OFF",
+				"useWaterTable": false
+			},
+			{
+				"temperatureUri": "arces-monitor:Current_Weather_Bertacchini_Temperature",
+				"precipitationUri": "arces-monitor:Current_Weather_Bertacchini_Precipitation",
+				"watertableUri": "swamp:Current_Weather_Bertacchini_WaterTable",
+				"stationUri": "swamp:Bertacchini",
+				"table": "GRD_01015_WT01_OFF15",
+				"useWaterTable": false
+			}
+		],
+		"places": {
+			"swamp:BertacchiniCriteriaON": "SWAMP_BERT_ON",
+			"swamp:BertacchiniCriteriaOFF": "SWAMP_BERT_OFF",
+			"swamp:FerrariCriteriaON": "SWAMP_FERRARI_ON",
+			"swamp:FerrariCriteriaOFF": "SWAMP_FERRARI_OFF",
+			"swamp:BonaciniCriteriaON": "SWAMP_BON_ON",
+			"swamp:BonaciniCriteriaOFF": "SWAMP_BON_OFF"
+		},
+		"outputs": {
+			"PREC": {
+		
+			},
+			"IRRIGATION": {
+				"property" : "swamp:IrrigationNeeds",
+				"unit" : "unit:Millimeter"	
+			},
+			"SURFACE_WC": {
+				
+			},
+			"AVAILABLE_WATER": {
+				
+			},
+			"READILY_AW": {
+				
+			},
+			"FRACTION_AW": {
+				
+			},
+			"DEFICIT": {
+				
+			},
+			"DEFICIT_25": {
+				
+			},
+			"DRAINAGE": {
+				
+			},
+			"RUNOFF": {
+				
+			},
+			"ET0": {
+				
+			},
+			"TRANSP_MAX": {
+				
+			},
+			"EVAP_MAX": {
+				
+			},
+			"EVAP": {
+				
+			},
+			"LAI": {
+				"property" : "swamp:LeafAreaIndex",
+				"unit" : "unit:Number"	
+			}
+		}
+	}
+}
