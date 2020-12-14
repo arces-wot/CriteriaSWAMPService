@@ -106,7 +106,7 @@ public class Criteria {
 
 		if (host != null)
 			jsap.setHost(host);
-		sepaClient = new GenericClient(jsap, null, null);
+		sepaClient = new GenericClient(jsap, null);
 
 		logger.info("SEPA_HOST: " + host);
 		logger.info("CMD: " + cmd);
